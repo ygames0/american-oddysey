@@ -3,47 +3,58 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Geolokalizacja</title>
+  <title>Mapa z Lokalizacją</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
   <style>
     body {
       font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
       text-align: center;
-      margin-top: 50px;
+    }
+    #map {
+      height: 500px;
+      width: 100%;
+      margin-top: 20px;
+    }
+    #info {
+      margin: 20px 0;
+      font-size: 18px;
     }
   </style>
 </head>
 <body>
-  <h1>Aktualne współrzędne</h1>
-  <p id="coordinates">Ładowanie...</p>
-  <script>
-    function showCoordinates(position) {
-      const latitude = position.coords.latitude;
-      const longitude = position.coords.longitude;
-      document.getElementById("coordinates").textContent = `Szerokość: ${latitude}, Długość: ${longitude}`;
-    }
+  <h1>Twoja lokalizacja na mapie</h1>
+  <div id="info">Ładowanie lokalizacji...</div>
+  <div id="map"></div>
 
-    function showError(error) {
-      let message = '';
-      switch(error.code) {
-        case error.PERMISSION_DENIED:
-          message = "Brak zgody na dostęp do lokalizacji.";
-          break;
-        case error.POSITION_UNAVAILABLE:
-          message = "Informacja o lokalizacji jest niedostępna.";
-          break;
-        case error.TIMEOUT:
-          message = "Przekroczono czas oczekiwania na dane lokalizacji.";
-          break;
-        default:
-          message = "Wystąpił nieznany błąd.";
-      }
-      document.getElementById("coordinates").textContent = message;
-    }
+  <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+  <script>
+    const map = L.map('map').setView([0, 0], 2); // Domyślne centrum mapy
+
+    // Dodanie warstwy mapy z OpenStreetMap
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors',
+    }).addTo(map);
+
+    const marker = L.marker([0, 0]).addTo(map); // Marker z domyślną pozycją
 
     if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(showCoordinates, showError);
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+
+          // Ustawienie mapy i markera na aktualną lokalizację
+          map.setView([latitude, longitude], 14); // Powiększenie na lokalizację
+          marker.setLatLng([latitude, longitude]);
+          document.getElementById('info').textContent = `Szerokość: ${latitude.toFixed(6)}, Długość: ${longitude.toFixed(6)}`;
+        },
+        () => {
+          document.getElementById('info').textContent = 'Nie udało się uzyskać lokalizacji.';
+        }
+      );
     } else {
-      document.getElementById("coordinates").textContent = "Twoja przeglądarka nie obsługuje geolokalizacji.";
+      document.getElementById('info').textContent = 'Twoja przeglądarka nie obsługuje geolokalizacji.';
     }
   </script>
 </body>
