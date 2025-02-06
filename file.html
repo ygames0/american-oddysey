@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Geolokalizacja</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin-top: 50px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Aktualne współrzędne</h1>
+  <p id="coordinates">Ładowanie...</p>
+  <script>
+    function showCoordinates(position) {
+      const latitude = position.coords.latitude;
+      const longitude = position.coords.longitude;
+      document.getElementById("coordinates").textContent = `Szerokość: ${latitude}, Długość: ${longitude}`;
+    }
+
+    function showError(error) {
+      let message = '';
+      switch(error.code) {
+        case error.PERMISSION_DENIED:
+          message = "Brak zgody na dostęp do lokalizacji.";
+          break;
+        case error.POSITION_UNAVAILABLE:
+          message = "Informacja o lokalizacji jest niedostępna.";
+          break;
+        case error.TIMEOUT:
+          message = "Przekroczono czas oczekiwania na dane lokalizacji.";
+          break;
+        default:
+          message = "Wystąpił nieznany błąd.";
+      }
+      document.getElementById("coordinates").textContent = message;
+    }
+
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(showCoordinates, showError);
+    } else {
+      document.getElementById("coordinates").textContent = "Twoja przeglądarka nie obsługuje geolokalizacji.";
+    }
+  </script>
+</body>
+</html>
