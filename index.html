@@ -21,6 +21,31 @@
       margin: 20px 0;
       font-size: 18px;
     }
+    .legend {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      background: white;
+      padding: 10px;
+      border-radius: 5px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+      font-size: 14px;
+      text-align: left;
+    }
+    .legend div {
+      display: flex;
+      align-items: center;
+      margin-bottom: 5px;
+    }
+    .legend span {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      margin-right: 8px;
+      border-radius: 50%;
+    }
+    .red { background: red; }
+    .blue { background: blue; }
   </style>
 </head>
 <body>
@@ -30,7 +55,7 @@
 
   <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
   <script>
-    const map = L.map('map').setView([50.3439693, 19.0916429], 13); 
+    const map = L.map('map').setView([50.3439693, 19.0916429], 13);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap contributors',
@@ -50,20 +75,18 @@
       popupAnchor: [0, -32]
     });
 
-    // Dodanie czerwonej pinezki dla poczty z etykietą
     L.marker([50.3439693, 19.0916429], { icon: redIcon })
       .addTo(map)
-      .bindTooltip('📮 Urząd Pocztowy', { permanent: true, direction: 'right' });
+      .bindPopup('Urząd Pocztowy');
 
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const { latitude, longitude } = position.coords;
 
-          // Dodanie niebieskiej pinezki dla użytkownika z etykietą
           L.marker([latitude, longitude], { icon: blueIcon })
             .addTo(map)
-            .bindTooltip('📍 Twoja lokalizacja', { permanent: true, direction: 'right' });
+            .bindPopup('Twoja lokalizacja');
 
           map.setView([latitude, longitude], 14);
           document.getElementById('info').textContent = `Twoja lokalizacja: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
@@ -75,6 +98,20 @@
     } else {
       document.getElementById('info').textContent = 'Twoja przeglądarka nie obsługuje geolokalizacji.';
     }
+
+    // Dodanie legendy
+    const legend = L.control({ position: 'bottomleft' });
+
+    legend.onAdd = function (map) {
+      const div = L.DomUtil.create('div', 'legend');
+      div.innerHTML = `
+        <div><span class="red"></span> Urząd Pocztowy</div>
+        <div><span class="blue"></span> Twoja lokalizacja</div>
+      `;
+      return div;
+    };
+
+    legend.addTo(map);
   </script>
 </body>
 </html>
