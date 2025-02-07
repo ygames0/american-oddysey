@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pl">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -30,13 +30,12 @@
 
   <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
   <script>
-    const map = L.map('map').setView([50.3439693, 19.0916429], 13); // Domyślne ustawienie mapy
+    const map = L.map('map').setView([50.3439693, 19.0916429], 13); 
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap contributors',
     }).addTo(map);
 
-    // Czerwona pinezka dla poczty
     const redIcon = L.icon({
       iconUrl: 'https://maps.google.com/mapfiles/ms/icons/red-dot.png',
       iconSize: [32, 32],
@@ -44,28 +43,27 @@
       popupAnchor: [0, -32]
     });
 
+    const blueIcon = L.icon({
+      iconUrl: 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png',
+      iconSize: [32, 32],
+      iconAnchor: [16, 32],
+      popupAnchor: [0, -32]
+    });
+
+    // Dodanie czerwonej pinezki dla poczty z etykietą
     L.marker([50.3439693, 19.0916429], { icon: redIcon })
       .addTo(map)
-      .bindPopup('Urząd Pocztowy - Punkt Nadawania i Odbioru')
-      .openPopup();
+      .bindTooltip('📮 Urząd Pocztowy', { permanent: true, direction: 'right' });
 
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const { latitude, longitude } = position.coords;
 
-          // Niebieska pinezka dla użytkownika
-          const blueIcon = L.icon({
-            iconUrl: 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png',
-            iconSize: [32, 32],
-            iconAnchor: [16, 32],
-            popupAnchor: [0, -32]
-          });
-
+          // Dodanie niebieskiej pinezki dla użytkownika z etykietą
           L.marker([latitude, longitude], { icon: blueIcon })
             .addTo(map)
-            .bindPopup('Twoja bieżąca lokalizacja')
-            .openPopup();
+            .bindTooltip('📍 Twoja lokalizacja', { permanent: true, direction: 'right' });
 
           map.setView([latitude, longitude], 14);
           document.getElementById('info').textContent = `Twoja lokalizacja: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
