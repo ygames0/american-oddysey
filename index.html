@@ -55,7 +55,7 @@
 
   <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
   <script>
-    const map = L.map('map').setView([50.3439693, 19.0916429], 13);
+    const map = L.map('map').setView([50.344, 19.091], 16);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap contributors',
@@ -75,9 +75,29 @@
       popupAnchor: [0, -32]
     });
 
-    L.marker([50.3439693, 19.0916429], { icon: redIcon })
+    // Urząd pocztowy (niebieska pinezka)
+    L.marker([50.3439060, 19.0912922], { icon: blueIcon })
       .addTo(map)
       .bindPopup('Urząd Pocztowy');
+
+    // Czerwone pinezki
+    const redLocations = [
+      [50.3441728, 19.0906555],
+      [50.3441514, 19.0919343],
+      [50.3441497, 19.0902535],
+      [50.3453558, 19.0914367],
+      [50.3453449, 19.0917187],
+      [50.3453701, 19.0916141],
+      [50.3452989, 19.0916637],
+      [50.3448100, 19.0904835],
+      [50.3444850, 19.0919856]
+    ];
+
+    redLocations.forEach(coords => {
+      L.marker(coords, { icon: redIcon })
+        .addTo(map)
+        .bindPopup('Lokalizacja');
+    });
 
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -88,7 +108,7 @@
             .addTo(map)
             .bindPopup('Twoja lokalizacja');
 
-          map.setView([latitude, longitude], 14);
+          map.setView([latitude, longitude], 16);
           document.getElementById('info').textContent = `Twoja lokalizacja: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
         },
         () => {
@@ -102,11 +122,11 @@
     // Dodanie legendy
     const legend = L.control({ position: 'bottomleft' });
 
-    legend.onAdd = function (map) {
+    legend.onAdd = function () {
       const div = L.DomUtil.create('div', 'legend');
       div.innerHTML = `
-        <div><span class="red"></span> Urząd Pocztowy</div>
-        <div><span class="blue"></span> Twoja lokalizacja</div>
+        <div><span class="blue"></span> Urząd Pocztowy</div>
+        <div><span class="red"></span> Lokacja</div>
       `;
       return div;
     };
