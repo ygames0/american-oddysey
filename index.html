@@ -103,6 +103,9 @@
     }
 
     function placeLetterMarkers() {
+      markers.forEach(marker => map.removeLayer(marker));
+      markers = [];
+
       remainingLetters.forEach(coords => {
         const marker = L.marker(coords, { icon: redIcon }).addTo(map);
         marker.bindPopup('List do dostarczenia');
@@ -128,7 +131,7 @@
           // Sprawdź, czy gracz jest w urzędzie pocztowym
           const distanceToPostOffice = getDistance(latitude, longitude, postOfficeCoords[0], postOfficeCoords[1]);
 
-          if (distanceToPostOffice < 20 && remainingLetters.length === 0) {
+          if (distanceToPostOffice < 5 && remainingLetters.length === 0) {
             alert('Jesteś w urzędzie pocztowym. Rozpoczynam generowanie listów!');
             remainingLetters = generateRandomLocations(postOfficeCoords, 12, 300); // 300m promienia
             saveGameState();
