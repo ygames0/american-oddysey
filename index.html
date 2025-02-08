@@ -144,7 +144,7 @@
             const markerCoords = marker.getLatLng();
             const distance = getDistance(latitude, longitude, markerCoords.lat, markerCoords.lng);
 
-            if (distance < 5) { // 5 metrów
+            if (distance < 200) { // 5 metrów
               map.removeLayer(marker);
               remainingLetters.splice(index, 1);
               markers.splice(index, 1);
