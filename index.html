@@ -20,6 +20,9 @@
     #info {
       margin: 20px 0;
       font-size: 18px;
+      background-color: #f1f1f1;
+      padding: 10px;
+      border: 1px solid #ddd;
     }
   </style>
 </head>
@@ -32,7 +35,7 @@
   <script>
     const map = L.map('map').setView([50.344, 19.091], 16);
     let accountBalance = parseFloat(localStorage.getItem('accountBalance')) || 0;
-    let remainingLetters = [];
+    let remainingLetters = JSON.parse(localStorage.getItem('remainingLetters')) || [];
     let markers = [];
 
     const redIcon = L.icon({
@@ -61,6 +64,10 @@
     function saveGameState() {
       localStorage.setItem('accountBalance', accountBalance.toFixed(2));
       localStorage.setItem('remainingLetters', JSON.stringify(remainingLetters));
+    }
+
+    function updateInfo(message) {
+      document.getElementById('info').textContent = message;
     }
 
     function getDistance(lat1, lon1, lat2, lon2) {
@@ -109,7 +116,7 @@
             .bindPopup('Twoja lokalizacja');
 
           map.setView([latitude, longitude], 16);
-          document.getElementById('info').textContent = `Twoja lokalizacja: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+          updateInfo(`Twoja lokalizacja: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}. Saldo: $${accountBalance.toFixed(2)}`);
 
           // Sprawdź, czy gracz jest w urzędzie pocztowym
           const distanceToPostOffice = getDistance(latitude, longitude, postOfficeCoords[0], postOfficeCoords[1]);
@@ -119,6 +126,7 @@
             remainingLetters = generateRandomLocations(postOfficeCoords, 12, 300); // 300m promienia
             saveGameState();
             placeLetterMarkers();
+            updateInfo('Listy zostały wygenerowane. Dostarcz je do czerwonych pinezek.');
           }
 
           // Sprawdź, czy gracz jest w pobliżu którejś czerwonej pinezki
@@ -142,15 +150,20 @@
               }
 
               saveGameState();
+              updateInfo(`Pozostało listów: ${remainingLetters.length}. Saldo: $${accountBalance.toFixed(2)}`);
             }
           });
+
+          if (remainingLetters.length === 0) {
+            updateInfo('Wszystkie listy dostarczone! Gratulacje!');
+          }
         },
         () => {
-          document.getElementById('info').textContent = 'Nie udało się uzyskać lokalizacji.';
+          updateInfo('Nie udało się uzyskać lokalizacji.');
         }
       );
     } else {
-      document.getElementById('info').textContent = 'Twoja przeglądarka nie obsługuje geolokalizacji.';
+      updateInfo('Twoja przeglądarka nie obsługuje geolokalizacji.');
     }
   </script>
 </body>
