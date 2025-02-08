@@ -112,11 +112,9 @@
           }
 
           window.playerMarker = L.marker([latitude, longitude], { icon: blueIcon })
-            .addTo(map)
-            .bindPopup('Twoja lokalizacja');
+            .addTo(map);
 
           map.setView([latitude, longitude], 16);
-          updateInfo(`Twoja lokalizacja: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}. Saldo: $${accountBalance.toFixed(2)}`);
 
           // Sprawdź, czy gracz jest w urzędzie pocztowym
           const distanceToPostOffice = getDistance(latitude, longitude, postOfficeCoords[0], postOfficeCoords[1]);
@@ -154,8 +152,8 @@
             }
           });
 
-          if (remainingLetters.length === 0) {
-            updateInfo('Wszystkie listy dostarczone! Gratulacje!');
+          if (remainingLetters.length === 0 && markers.length === 0) {
+            updateInfo('Wszystkie listy dostarczone! Wróć do urzędu pocztowego, aby rozpocząć nową dostawę.');
           }
         },
         () => {
