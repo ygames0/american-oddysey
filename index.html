@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Listonosz Gra</title>
+  <title>Gra Listonosz</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
   <style>
     body {
@@ -21,47 +21,19 @@
       margin: 20px 0;
       font-size: 18px;
     }
-    .legend {
-      position: absolute;
-      bottom: 20px;
-      left: 20px;
-      background: white;
-      padding: 10px;
-      border-radius: 5px;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
-      font-size: 14px;
-      text-align: left;
-    }
-    .legend div {
-      display: flex;
-      align-items: center;
-      margin-bottom: 5px;
-    }
-    .legend span {
-      display: inline-block;
-      width: 16px;
-      height: 16px;
-      margin-right: 8px;
-      border-radius: 50%;
-    }
-    .red { background: red; }
-    .blue { background: blue; }
   </style>
 </head>
 <body>
   <h1>Gra Listonosz</h1>
-  <div id="info">Ładowanie lokalizacji...</div>
+  <div id="info">Podejdź do urzędu pocztowego, aby rozpocząć grę.</div>
   <div id="map"></div>
 
   <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
   <script>
     const map = L.map('map').setView([50.344, 19.091], 16);
     let accountBalance = parseFloat(localStorage.getItem('accountBalance')) || 0;
-    let remainingLetters = JSON.parse(localStorage.getItem('remainingLetters')) || [];
-
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors',
-    }).addTo(map);
+    let remainingLetters = [];
+    let markers = [];
 
     const redIcon = L.icon({
       iconUrl: 'https://maps.google.com/mapfiles/ms/icons/red-dot.png',
@@ -77,33 +49,14 @@
       popupAnchor: [0, -32]
     });
 
-    // Urząd pocztowy (niebieska pinezka)
-    L.marker([50.3439060, 19.0912922], { icon: blueIcon })
-      .addTo(map)
-      .bindPopup('Urząd Pocztowy');
+    const postOfficeCoords = [50.3439060, 19.0912922];
 
-    // Jeśli nie ma zapisanych lokalizacji, ustaw domyślne
-    if (remainingLetters.length === 0) {
-      remainingLetters = [
-        [50.3441728, 19.0906555],
-        [50.3441514, 19.0919343],
-        [50.3441497, 19.0902535],
-        [50.3453558, 19.0914367],
-        [50.3453449, 19.0917187],
-        [50.3453701, 19.0916141],
-        [50.3452989, 19.0916637],
-        [50.3448100, 19.0904835],
-        [50.3444850, 19.0919856]
-      ];
-      saveGameState();
-    }
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors',
+    }).addTo(map);
 
-    // Dodaj czerwone pinezki dla pozostałych listów
-    const markers = remainingLetters.map(coords => {
-      const marker = L.marker(coords, { icon: redIcon }).addTo(map);
-      marker.bindPopup('List do dostarczenia');
-      return marker;
-    });
+    // Dodaj znacznik urzędu pocztowego
+    L.marker(postOfficeCoords, { icon: blueIcon }).addTo(map).bindPopup('Urząd Pocztowy');
 
     function saveGameState() {
       localStorage.setItem('accountBalance', accountBalance.toFixed(2));
@@ -119,6 +72,26 @@
                 Math.sin(dLon / 2) * Math.sin(dLon / 2);
       const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
       return R * c * 1000; // Zwróć w metrach
+    }
+
+    function generateRandomLocations(center, count, radius) {
+      const locations = [];
+      for (let i = 0; i < count; i++) {
+        const angle = Math.random() * 2 * Math.PI;
+        const r = Math.random() * radius;
+        const lat = center[0] + (r * Math.cos(angle)) / 111300;
+        const lon = center[1] + (r * Math.sin(angle)) / (111300 * Math.cos(center[0] * Math.PI / 180));
+        locations.push([lat, lon]);
+      }
+      return locations;
+    }
+
+    function placeLetterMarkers() {
+      remainingLetters.forEach(coords => {
+        const marker = L.marker(coords, { icon: redIcon }).addTo(map);
+        marker.bindPopup('List do dostarczenia');
+        markers.push(marker);
+      });
     }
 
     if (navigator.geolocation) {
@@ -138,12 +111,22 @@
           map.setView([latitude, longitude], 16);
           document.getElementById('info').textContent = `Twoja lokalizacja: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
 
+          // Sprawdź, czy gracz jest w urzędzie pocztowym
+          const distanceToPostOffice = getDistance(latitude, longitude, postOfficeCoords[0], postOfficeCoords[1]);
+
+          if (distanceToPostOffice < 5 && remainingLetters.length === 0) {
+            alert('Jesteś w urzędzie pocztowym. Rozpoczynam generowanie listów!');
+            remainingLetters = generateRandomLocations(postOfficeCoords, 12, 300); // 300m promienia
+            saveGameState();
+            placeLetterMarkers();
+          }
+
           // Sprawdź, czy gracz jest w pobliżu którejś czerwonej pinezki
           markers.forEach((marker, index) => {
             const markerCoords = marker.getLatLng();
             const distance = getDistance(latitude, longitude, markerCoords.lat, markerCoords.lng);
 
-            if (distance < 20) { // 20 metrów
+            if (distance < 5) { // 5 metrów
               map.removeLayer(marker);
               remainingLetters.splice(index, 1);
               markers.splice(index, 1);
@@ -169,20 +152,6 @@
     } else {
       document.getElementById('info').textContent = 'Twoja przeglądarka nie obsługuje geolokalizacji.';
     }
-
-    // Dodanie legendy
-    const legend = L.control({ position: 'bottomleft' });
-
-    legend.onAdd = function () {
-      const div = L.DomUtil.create('div', 'legend');
-      div.innerHTML = `
-        <div><span class="blue"></span> Urząd Pocztowy</div>
-        <div><span class="red"></span> Lokacja</div>
-      `;
-      return div;
-    };
-
-    legend.addTo(map);
   </script>
 </body>
 </html>
