@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mapa z Lokalizacjami</title>
+  <title>Listonosz Gra</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
   <style>
     body {
@@ -49,13 +49,15 @@
   </style>
 </head>
 <body>
-  <h1>Mapa lokalizacji</h1>
+  <h1>Gra Listonosz</h1>
   <div id="info">Ładowanie lokalizacji...</div>
   <div id="map"></div>
 
   <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
   <script>
     const map = L.map('map').setView([50.344, 19.091], 16);
+    let accountBalance = parseFloat(localStorage.getItem('accountBalance')) || 0;
+    let remainingLetters = JSON.parse(localStorage.getItem('remainingLetters')) || [];
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap contributors',
@@ -80,36 +82,85 @@
       .addTo(map)
       .bindPopup('Urząd Pocztowy');
 
-    // Czerwone pinezki
-    const redLocations = [
-      [50.3441728, 19.0906555],
-      [50.3441514, 19.0919343],
-      [50.3441497, 19.0902535],
-      [50.3453558, 19.0914367],
-      [50.3453449, 19.0917187],
-      [50.3453701, 19.0916141],
-      [50.3452989, 19.0916637],
-      [50.3448100, 19.0904835],
-      [50.3444850, 19.0919856]
-    ];
+    // Jeśli nie ma zapisanych lokalizacji, ustaw domyślne
+    if (remainingLetters.length === 0) {
+      remainingLetters = [
+        [50.3441728, 19.0906555],
+        [50.3441514, 19.0919343],
+        [50.3441497, 19.0902535],
+        [50.3453558, 19.0914367],
+        [50.3453449, 19.0917187],
+        [50.3453701, 19.0916141],
+        [50.3452989, 19.0916637],
+        [50.3448100, 19.0904835],
+        [50.3444850, 19.0919856]
+      ];
+      saveGameState();
+    }
 
-    redLocations.forEach(coords => {
-      L.marker(coords, { icon: redIcon })
-        .addTo(map)
-        .bindPopup('Lokalizacja');
+    // Dodaj czerwone pinezki dla pozostałych listów
+    const markers = remainingLetters.map(coords => {
+      const marker = L.marker(coords, { icon: redIcon }).addTo(map);
+      marker.bindPopup('List do dostarczenia');
+      return marker;
     });
 
+    function saveGameState() {
+      localStorage.setItem('accountBalance', accountBalance.toFixed(2));
+      localStorage.setItem('remainingLetters', JSON.stringify(remainingLetters));
+    }
+
+    function getDistance(lat1, lon1, lat2, lon2) {
+      const R = 6371; // Promień Ziemi w km
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c * 1000; // Zwróć w metrach
+    }
+
     if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
+      navigator.geolocation.watchPosition(
         (position) => {
           const { latitude, longitude } = position.coords;
 
-          L.marker([latitude, longitude], { icon: blueIcon })
+          // Usuń poprzedni marker gracza, jeśli istnieje
+          if (window.playerMarker) {
+            map.removeLayer(window.playerMarker);
+          }
+
+          window.playerMarker = L.marker([latitude, longitude], { icon: blueIcon })
             .addTo(map)
             .bindPopup('Twoja lokalizacja');
 
           map.setView([latitude, longitude], 16);
           document.getElementById('info').textContent = `Twoja lokalizacja: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+
+          // Sprawdź, czy gracz jest w pobliżu którejś czerwonej pinezki
+          markers.forEach((marker, index) => {
+            const markerCoords = marker.getLatLng();
+            const distance = getDistance(latitude, longitude, markerCoords.lat, markerCoords.lng);
+
+            if (distance < 20) { // 20 metrów
+              map.removeLayer(marker);
+              remainingLetters.splice(index, 1);
+              markers.splice(index, 1);
+
+              // Napiwek z szansą 10%
+              let tip = 0;
+              if (Math.random() < 0.1) {
+                tip = (Math.random() * (1.00 - 0.10) + 0.10).toFixed(2);
+                alert(`List dostarczony! Napiwek: $${tip}`);
+                accountBalance += parseFloat(tip);
+              } else {
+                alert('List dostarczony!');
+              }
+
+              saveGameState();
+            }
+          });
         },
         () => {
           document.getElementById('info').textContent = 'Nie udało się uzyskać lokalizacji.';
