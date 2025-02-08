@@ -82,15 +82,24 @@
     }
 
     function generateRandomLocations(center, count, radius) {
-      const locations = [];
-      for (let i = 0; i < count; i++) {
+      const predefinedLocations = [
+        [50.3443739, 19.0917029],
+        [50.3462080, 19.0909217],
+        [50.3438193, 19.0920697],
+        [50.3458400, 19.0922099],
+        [50.3452715, 19.0913733],
+        [50.3452569, 19.0915333],
+        [50.3447276, 19.0908084]
+      ];
+      // Uzupełnij losowymi punktami, jeśli potrzeba więcej niż zdefiniowano
+      while (predefinedLocations.length < count) {
         const angle = Math.random() * 2 * Math.PI;
         const r = Math.random() * radius;
         const lat = center[0] + (r * Math.cos(angle)) / 111300;
         const lon = center[1] + (r * Math.sin(angle)) / (111300 * Math.cos(center[0] * Math.PI / 180));
-        locations.push([lat, lon]);
+        predefinedLocations.push([lat, lon]);
       }
-      return locations;
+      return predefinedLocations.slice(0, count);
     }
 
     function placeLetterMarkers() {
